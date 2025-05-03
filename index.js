@@ -3,14 +3,16 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = 3000;
 const todoRoutes = require('./routes/TodoRoutes.js');  // Importing todoRoutes
+require('dotenv').config();
 
 // Middleware
 app.use(express.json());
 
 
 
+
 // Connect MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/todoapp')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
   })
