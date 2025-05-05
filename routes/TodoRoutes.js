@@ -183,18 +183,18 @@ router.post('/add-subtodo/:id',async (req,res)=>{
             : 0;
             // Here, in the line above, if the length of allsubtodos is 0, maxVal =0. If not, maxVal = max(subtodoId) 
             
-            // 1. Create new subtodo
+            // 1. Creating a new subtodo
             const subTodotoAdd = new Subtodo({"todoId":todoId,"subtodoId":maxVal+1,"title":title, "completed":false})
             await subTodotoAdd.save();
             
             
-            // 2. Push the Subtodo's _id to the parent Todo
+            // 2. Pushing the Subtodo's _id to the parent Todo
             await Todo.updateOne(
                 { id: todoId },
                 { $push: { subtodos: subTodotoAdd._id } }
             );
             
-            // 3. Send response    
+            // 3. Sending the response    
             res.status(201).send({
                 "message":"Subtodo added!",
                 "data":subTodotoAdd
@@ -257,11 +257,14 @@ router.delete('/delete-subtodo/:id/:subid', async(req,res)=>{
                 {
                     return res.status(404).send({"message":"subtodo not found to be deleted!"})
                 }
-                
+
+
+                // 1. Pulling out the current subtodo from the todo using its _id
                 await Todo.updateOne(
                     { id: todoId },
                     { $pull: { subtodos: subtodo._id } }
                 );
+                // Deleting it from the subtodos
                 await Subtodo.deleteOne({todoId:todoId, subtodoId:subtodoId})
                 res.status(200).send({"message":"Deleted Successfully!"})  
     }
@@ -270,4 +273,4 @@ router.delete('/delete-subtodo/:id/:subid', async(req,res)=>{
     }
 })
 
-module.exports = router;  // Export the router
+module.exports = router;  // Exporting the router
