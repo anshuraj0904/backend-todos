@@ -116,21 +116,22 @@ router.get('/get-subtodos/:id', async (req,res)=>{
 
         const todoId = parseInt(req.params.id)
         
-        const todo = await Todo.findOne({ id: todoId }).populate('subtodos')
-        // Imp:- await Todo.findOne({id:todoId}) will give us just that todo task, but, .populate('subtodos') will give us all the subtodos as well. 
+        const todo = await Todo.findOne({ id: todoId })
         console.log('Reaching here');
         
         if(!todo)
             {
                 return res.status(404).send({"message":"No such todo found!"})
             }
-            
-        if(todo.subtodos.length === 0)
+        
+        const subtodos = await Subtodo.find({todoId:todoId})  
+
+        if(subtodos.length === 0)
             {
                     return res.status(200).send({"message":"No sub-todo found for this todo!"})
             }
 
-        res.status(200).send(todo.subtodos)
+        res.status(200).json(subtodos)
 
     }
 
@@ -140,5 +141,105 @@ router.get('/get-subtodos/:id', async (req,res)=>{
 })  
 
 
+router.post('/add-subtodo/:id',async (req,res)=>{
+    const todoId = parseInt(req.params.id)
+    const todo = await Todo.findOne({id:todoId})
+
+    if(!todo)
+    {
+        return res.status(404).send({"message":"Todo not found for addition of the subtodo!"})
+    }
+    
+    const {title} = req.body
+
+    if(!title)
+    {
+        return res.status(404).send({"message":"Please pass a title!"})
+    }
+
+    
+    const allSubtodos = await Subtodo.find({todoId:todoId})
+    let flag = false
+
+    if(allSubtodos)
+        {
+            flag =  allSubtodos.some(subtodo => subtodo.title === title)  
+        }
+    if(flag)
+        {
+            return res.status(409).send({"message":"This subtodo already exists!"})
+        }    
+
+    const maxVal = allSubtodos.length > 0
+    ? Math.max(...allSubtodos.map(s => s.subtodoId))
+    : 0;
+    // Here, in the line above, if the length of allsubtodos is 0, maxVal =0. If not, maxVal = max(subtodoId) 
+
+    // 1. Create new subtodo
+    const subTodotoAdd = new Subtodo({"todoId":todoId,"subtodoId":maxVal+1,"title":title, "completed":false})
+    await subTodotoAdd.save();
+
+    
+    // 2. Push the Subtodo's _id to the parent Todo
+    await Todo.updateOne(
+      { id: todoId },
+      { $push: { subtodos: subTodotoAdd._id } }
+    );
+    
+    // 3. Send response    
+    res.status(201).send({
+        "message":"Subtodo added!",
+        "data":subTodotoAdd
+    })
+
+})
+
+
+router.put('/update-subtodo/:id/:subid', async (req,res)=>{
+    const todoId = parseInt(req.params.id)
+    const subtodoId = parseInt(req.params.subid)
+    
+    const todo = await Todo.findOne({id:todoId})
+
+    if(!todo){
+       return res.status(404).send({"message":"The todo doesn't exist, and, so does the sub-todo"})
+    }
+
+    const subtodo = await Subtodo.findOne({todoId:todoId, subtodoId:subtodoId})
+
+    if(!subtodo)
+    {
+        return res.status(404).send({"message":"This subtodo doesn't exist!"})        
+    }
+
+    if(subtodo.completed)
+    {
+        return res.status(200).send({"message":"This sub-task is already completed!"})
+    }
+
+    subtodo.completed = true
+    await subtodo.save()
+    res.status(200).send({"message":"task updated!"})
+})
+
+
+router.delete('/delete-subtodo/:id/:subid', async(req,res)=>{
+    const todoId = parseInt(req.params.id)
+    const subtodoId = parseInt(req.params.subid)
+
+    const todo = Todo.findOne({id:todoId})
+    if(!todo)
+    {
+        return res.status(404).send({"message":"Todo not found!"})
+    }
+
+    const subtodo = Subtodo.findOne({todoId:todoId, subtodoId:subtodoId})
+
+    if(!subtodo)
+    {
+        return res.status(404).send({"message":"subtodo not found to be deleted!"})
+    }
+
+})
 
 module.exports = router;  // Export the router
