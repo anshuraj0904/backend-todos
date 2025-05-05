@@ -28,7 +28,7 @@ This is a RESTful API for managing Todo items and their corresponding subtasks. 
 
 3. Make the following changes in package.json:
    ```json 
-       "scripts": {
+   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
