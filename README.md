@@ -31,7 +31,7 @@ This is a RESTful API for managing Todo items and their corresponding subtasks. 
    "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
-  },
+        }
    ```
 
 4. Create a .env file and add the following line:
